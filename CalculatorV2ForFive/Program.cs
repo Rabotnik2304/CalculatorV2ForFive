@@ -110,12 +110,166 @@ namespace CalculatorV2ForFive
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Итоговая сумма в дополнительном коде: {0}", sum);
             Console.ResetColor();
+            Console.WriteLine();
+
+            if (sum.Length>8)
+            {
+                sum= sum.Substring(1,8);
+                Console.WriteLine("Т.к. итоговаая сумма имеет длину больше 8, то нужно отрезать старший разряд - {0}",sum);
+            }
 
             if (sum.Substring(0, 1) == "1")
             {
-                
+                Console.WriteLine("Т.к. у получившегося числа в первом разряде стоит 1, то оно отрицательное");
+                Console.WriteLine("Теперь, чтобы перевести его из доп.кода в десятичное число нужно:");
+                Console.WriteLine("1. Отнять от получившегося числа 1");
+                Console.WriteLine("2. заменить в получившемся числе все 0 на 1 и все 1 на 0");
+                Console.WriteLine("3. перевести получившееся число из двочиной системы счисления в десятичную и дописать \"-\" слева");
+                Console.WriteLine();
+                string sum1 = CorrectVichet(sum, "1");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
+                Console.WriteLine("Число, после того как мы отняли один : {0}", sum1);
+                Console.ResetColor();
+                Console.WriteLine();
+                Console.WriteLine("Теперь заменим в числе {0} все 0 на 1 и все 1 на 0", sum1);
+
+                StringBuilder reverseSum1 = new StringBuilder();
+                foreach (char c in sum1)
+                {
+                    if (c == '0')
+                    {
+                        reverseSum1.Append(1);
+                    }
+                    else
+                    {
+                        reverseSum1.Append(0);
+                    }
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
+                Console.WriteLine("Число, после замены в нём всех 0 на 1 и всех 1 на 0: {0}", reverseSum1);
+                Console.WriteLine();
+                Console.ResetColor();
+
+                Console.WriteLine("Теперь нужно перевести полученное число в десятичную систему счисления, дописать слева \"-\" и мы получим ответ");
+                int res1 = RightFromAnyToDec(reverseSum1.ToString(), 2);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
+                Console.WriteLine("Итоговая сумма: -{0}", res1);
+                Console.WriteLine();
+                Console.ResetColor();
+
             }
 
+        }
+
+        private static string Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        private static string CorrectVichet(string number1, string number2)
+        {
+            
+            int baze = 2;
+            int NumD1 = FromAnyToDec(number1, baze);
+            int NumD2 = FromAnyToDec(number2, baze);
+
+            string num1 = number1;
+            string num2 = number2;
+            if (NumD1 > NumD2)
+            {
+                number1 = num1;
+                number2 = num2;
+            }
+            else
+            {
+                number1 = num2;
+                number2 = num1;
+            }
+
+            number2 = number2.PadLeft(number1.Length,'0');
+            List<char> charList1 = number1.ToCharArray().ToList();
+            List<char> charList2 = number2.ToCharArray().ToList();
+            Console.WriteLine("Вычитаем из большего меньшее");
+            Console.Write(" ");
+            Console.WriteLine(number1);
+            Console.WriteLine("-");
+            Console.Write(" ");
+            for (int i = 0; i < charList1.Count - charList2.Count; i++)
+            {
+                Console.Write("0");
+            }
+            Console.WriteLine(number2);
+            Console.Write(" ");
+            for (int i = 0; i < charList1.Count; i++)
+            {
+                Console.Write("-");
+            }
+            Console.WriteLine();
+
+            List<int> numberList1 = charList1.Select(c => (int)Alphabet.IndexOf(c)).ToList();
+            List<int> numberList2 = charList2.Select(c => (int)Alphabet.IndexOf(c)).ToList();
+            int j;
+
+            Console.WriteLine("Производим поразрядное вычитание:");
+
+            for (int i = numberList1.Count - 1; i >= 0; i--)
+            {
+                j = i - (numberList1.Count - numberList2.Count);
+
+                if (j >= 0)
+                {
+                    Console.WriteLine("В разряде {0}, мы вычитаем из {1} {2} и получаем:", i + 1, numberList1[i], numberList2[j]);
+                    numberList1[i] -= numberList2[j];
+                }
+
+                if (i >= 1 && j >= 0)
+                {
+                    Console.WriteLine(String.Join(" ", numberList1));
+                }
+
+                while (numberList1[i] < 0)
+                {
+                    Console.WriteLine("Т.к. до этого мы получили отрицательное число " +
+                        "производим заём из следующего разряда и увеличиваем {0} на {1} и получаем {2}", numberList1[i], baze, numberList1[i] + baze);
+
+                    numberList1[i] += baze;
+                    numberList1[i - 1]--;
+                    Console.WriteLine(String.Join(" ", numberList1));
+                }
+            }
+            if (numberList1.Count == numberList2.Count)
+            {
+                Console.WriteLine(String.Join(" ", numberList1));
+            }
+            Console.WriteLine();
+            Console.WriteLine("Выведем получившийся ответ в {0} системе счисления:",baze);
+            Console.WriteLine();
+            StringBuilder result = new StringBuilder();
+
+            for (int i = 0; i < numberList1.Count; i++)
+            {
+                result.Append(Alphabet[numberList1[i]]);
+            }
+            Console.Write(" ");
+            Console.WriteLine(number1);
+            Console.WriteLine("-");
+            Console.Write(" ");
+
+            for (int i = 0; i < charList1.Count - charList2.Count; i++)
+            {
+                Console.Write("0");
+            }
+            Console.WriteLine(number2);
+            Console.Write(" ");
+            for (int i = 0; i < charList1.Count; i++)
+            {
+                Console.Write("-");
+            }
+            Console.WriteLine();
+            Console.Write(" ");
+            Console.WriteLine(result.ToString());
+            return(result.ToString());
         }
 
         private static void ConverterToAdditionalStart()
@@ -167,7 +321,11 @@ namespace CalculatorV2ForFive
                 Console.WriteLine();
                 Console.WriteLine("Дописываем к числу {0} нули слева, пока оно не станет длины 8", binNumber);
                 binNumber = binNumber.PadLeft(8, '0');
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
                 Console.WriteLine("Итоговое число: {0}", binNumber);
+                Console.ResetColor();
+                
                 Console.WriteLine();
 
                 Console.WriteLine("Теперь заменим в числе {0} все 0 на 1 и все 1 на 0", binNumber);
@@ -184,8 +342,11 @@ namespace CalculatorV2ForFive
                         reverseBinNumber.Append(0);
                     }
                 }
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
                 Console.WriteLine("У нас получилось число: {0}", reverseBinNumber);
-
+                Console.ResetColor();
+                
                 Console.WriteLine();
                 Console.WriteLine("Теперь добавляем к числу {0} 1 и получаем итоговый ответ", reverseBinNumber);
                 Console.WriteLine();
@@ -214,6 +375,56 @@ namespace CalculatorV2ForFive
                 result += num;
             }
 
+            return (int)result;
+        }
+
+        static int RightFromAnyToDec(string number, int baze)
+        {
+
+            if (baze > 50)
+                throw new ArgumentException("Система счисления должна быть меньше или равна 50");
+
+            Console.WriteLine();
+
+            Console.WriteLine("Перeводим число {0} из {1} системы счисления в десятичную систему счисления", number, baze);
+
+            Console.WriteLine();
+
+            Console.WriteLine("Последовательно проходимся по числу {0} с лева на право и строим его в десятичной системе счисления", number);
+
+            long result = 0;
+            int digitsCount = number.Length;
+            int num;
+            number = new string(number.Reverse().ToArray());
+            for (int i = 0; i < digitsCount; i++)
+            {
+                char c = number[i];
+
+                if (c >= '0' && c <= '9')
+                    num = c - '0';
+                else if (c >= 'A' && c <= 'Z')
+                    num = c - 'A' + 10;
+                else if (c >= 'a' && c <= 'z')
+                    num = c - 'a' + (('Z' - 'A') + 1) + 10;
+                else throw new ArgumentException("Строка содержит символ не корректный для данной системы счисления");
+
+                if (num >= baze)
+                    throw new ArgumentException("Строка содержит символ не корректный для данной системы счисления");
+
+                Console.Write("Добавим к числу {0} {1}*{2}^{3} и получим ", result, num, baze, i);
+
+
+                result += num * (long)Math.Pow(baze, i);
+
+                Console.WriteLine(result);
+
+                if (result > 2147483647)
+                {
+                    throw new ArgumentException("Ваше число слишком большое, см. примечание");
+                }
+            }
+
+            Console.WriteLine("Мы получили наше число в десятичной системе счисления: {0}", result);
             return (int)result;
         }
         public static string CorrectSum(string number1,string number2)
@@ -360,8 +571,12 @@ namespace CalculatorV2ForFive
             Console.WriteLine();
             Console.WriteLine("Записываем получившиеся остатки от деления задом на перёд");
             string result = string.Join("", builder.ToString().Reverse());
-            Console.WriteLine("Число {0} в двоичной системе счисления имеет вид: {1}", numberStart, result);
 
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine();
+            Console.WriteLine("Число {0} в двоичной системе счисления имеет вид: {1}", numberStart, result);
+            Console.ResetColor();
+            
             return result;
         }
         
