@@ -74,7 +74,9 @@ namespace CalculatorV2ForFive
         private static void AdditionalSumStart()
         {
             Console.WriteLine("Введите через пробел два целых числа, которые вы хотите сложить");
-            Console.WriteLine("(Внимание, в случае если сумма чисел больше 127 калькулятор будет выводить неверные ответы)");
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine("(Внимание, в случае если сумма чисел по модулю больше 127 калькулятор будет выводить неверные ответы)");
+            Console.ResetColor();
             string sumReadLine = Console.ReadLine().Trim();
             string[] sumSplit = sumReadLine.Split(" ");
 
@@ -116,6 +118,7 @@ namespace CalculatorV2ForFive
             {
                 sum= sum.Substring(1,8);
                 Console.WriteLine("Т.к. итоговаая сумма имеет длину больше 8, то нужно отрезать старший разряд - {0}",sum);
+                Console.WriteLine();
             }
 
             if (sum.Substring(0, 1) == "1")
@@ -162,6 +165,19 @@ namespace CalculatorV2ForFive
                 Console.WriteLine();
                 Console.ResetColor();
 
+            }
+            else
+            {
+                Console.WriteLine("Т.к. у получившегося числа в первом разряде стоит 0, то оно полоительное");
+                Console.WriteLine("Теперь, чтобы перевести его из доп.кода в десятичное число нужно:");
+                Console.WriteLine("1. перевести получившееся число из двочиной системы счисления в десятичную");
+                               
+                int res1 = RightFromAnyToDec(sum, 2);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine();
+                Console.WriteLine("Итоговая сумма: {0}", res1);
+                Console.WriteLine();
+                Console.ResetColor();
             }
 
         }
