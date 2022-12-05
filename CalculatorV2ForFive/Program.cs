@@ -137,7 +137,7 @@ namespace CalculatorV2ForFive
                 Console.ResetColor();
                 Console.WriteLine();
                 Console.WriteLine("Теперь заменим в числе {0} все 0 на 1 и все 1 на 0", sum1);
-
+                
                 StringBuilder reverseSum1 = new StringBuilder();
                 foreach (char c in sum1)
                 {
