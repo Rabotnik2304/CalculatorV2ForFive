@@ -35,7 +35,7 @@ namespace CalculatorV2ForFive
                     }
                     else if (operation == "3")
                     {
-                        Console.WriteLine("Мы не можем сделать эту операцию");
+                        ConverterFromFloatToBinaryFloat();
                     }
                     else if (operation == "4")
                     {
@@ -70,7 +70,50 @@ namespace CalculatorV2ForFive
                 Console.Clear();
             }
         }
+        private static void ConverterFromFloatToBinaryFloat()
+        {
+            Console.WriteLine("Введите вещественное число, которое вы хотите перевести в формат с плавающей точкой");
+            Console.WriteLine("(Целая часть отделяется от дробной \",\")");
+            string readLine = Console.ReadLine().Trim();
 
+            if (double.TryParse(readLine, out double doubleNumber1))
+                doubleNumber1 = doubleNumber1;
+            else
+                throw new ArgumentException("Ваше число некорректно");
+            string str = Convert.ToString(doubleNumber1);
+            string[] parts = str.Split(',');
+
+            int intIntegerPartNumber = int.Parse(parts[0]);
+            double floatPartNumber = double.Parse(parts[1]);
+
+            Console.WriteLine();
+            Console.WriteLine("Для начала переведём вещественное число в двоичную систему счисления");
+            Console.WriteLine("Переведём целую часть числа в двоичную систему счисления: ");
+            
+            bool ifLessThanZero = false; 
+            if (intIntegerPartNumber < 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Т.к. число {0} отрицательное, то переведем в двочиную систему модуль этого числа и допишем слева \"-\"", intIntegerPartNumber);
+                
+                ifLessThanZero = true;
+            }
+
+            intIntegerPartNumber = Math.Abs(intIntegerPartNumber);
+
+            string stringIntegerPartNumber = RightFromDecToBinary(intIntegerPartNumber);
+
+            if (ifLessThanZero)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Т.к. число -{0} отрицательное допишем слева \"-\"", intIntegerPartNumber);
+                stringIntegerPartNumber = "-" + stringIntegerPartNumber;
+            }
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Целая часть числа {0} в двоичной системе имеет вид: {1}", doubleNumber1, stringIntegerPartNumber);
+            Console.ResetColor();
+        }
         private static void AdditionalSumStart()
         {
             Console.WriteLine("Введите через пробел два целых числа, которые вы хотите сложить");
