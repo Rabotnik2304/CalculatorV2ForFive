@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace CalculatorV2ForFive
 {
@@ -70,9 +71,9 @@ namespace CalculatorV2ForFive
                 Console.Clear();
             }
         }
-        private static void ConverterFromFloatToBinaryFloat()
+        private static string ConverterFromFloatToBinaryFloat()
         {
-            Console.WriteLine("Введите вещественное число, которое вы хотите перевести в формат с плавающей точкой");
+            Console.WriteLine("Введите вещественное число, которое вы хотите перевести в формат нормализованной записи");
             Console.WriteLine("(Целая часть отделяется от дробной \",\")");
             string readLine = Console.ReadLine().Trim();
 
@@ -84,36 +85,180 @@ namespace CalculatorV2ForFive
             string[] parts = str.Split(',');
 
             int intIntegerPartNumber = int.Parse(parts[0]);
-            double floatPartNumber = double.Parse(parts[1]);
+            string floatPartNumber = parts[1];
 
             Console.WriteLine();
             Console.WriteLine("Для начала переведём вещественное число в двоичную систему счисления");
             Console.WriteLine("Переведём целую часть числа в двоичную систему счисления: ");
+
+            string binaryIntegerPartNumber = IntegerPartNumberToBinary(doubleNumber1, intIntegerPartNumber);
+            int lenOfbinaryIntegerPartNumber;
+            if (doubleNumber1<0 && intIntegerPartNumber == 0)
+            {
+                binaryIntegerPartNumber = "-" + binaryIntegerPartNumber;
+            }    
+            if (binaryIntegerPartNumber.Substring(0, 1) == "-")
+            {
+                lenOfbinaryIntegerPartNumber = binaryIntegerPartNumber.Length - 1;
+            }
+            else
+            {
+                lenOfbinaryIntegerPartNumber = binaryIntegerPartNumber.Length;
+            }
+            Console.WriteLine();
+            Console.WriteLine("Теперь переведём дробную часть числа в двоичную систему счисления: ");
+            Console.WriteLine();
+            string resultStringBinaryFloatPartNumber = FloatPartNumberToBinary(doubleNumber1, ref floatPartNumber, lenOfbinaryIntegerPartNumber);
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Итого, число {0} в двоичной системе имеет вид: {1},{2}", doubleNumber1, binaryIntegerPartNumber, resultStringBinaryFloatPartNumber);
+            Console.ResetColor();
+            string resultBinaryNumber = binaryIntegerPartNumber + resultStringBinaryFloatPartNumber;
+            Console.WriteLine();
+            Console.WriteLine("Теперь осталось только перевести полученное число в формат со смещенным порядком и мантиссой:");
+            Console.WriteLine();
+            Console.WriteLine("Для начала представим двоичное число в нормализованной экспоненциальной форме:");
+
+            string numberSign="";
+            string mantissa="";
+            int numberOrder=0;
             
-            bool ifLessThanZero = false; 
+            if (intIntegerPartNumber!=0)
+            {
+                numberSign = resultBinaryNumber.Substring(0, 1 + binaryIntegerPartNumber.Length - lenOfbinaryIntegerPartNumber);
+                mantissa = resultBinaryNumber.Substring(1 + binaryIntegerPartNumber.Length - lenOfbinaryIntegerPartNumber);
+                numberOrder = lenOfbinaryIntegerPartNumber - 1;
+            }   
+            else
+            {   
+
+                numberSign = resultStringBinaryFloatPartNumber.TrimStart('0').Substring(0,1);
+                if (doubleNumber1 < 0)
+                {
+                    numberSign = "-" + numberSign;
+                }
+                mantissa = resultStringBinaryFloatPartNumber.TrimStart('0').Substring(1);
+                
+                numberOrder = -(resultStringBinaryFloatPartNumber.Length - mantissa.Length);
+                
+                if (mantissa.Length == 0)
+                {
+                    mantissa = "0";
+                }
+            }
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Это будет: {0},{1} * 2^{2}", numberSign, mantissa, numberOrder);
+            Console.ResetColor();
+            Console.WriteLine();
+
+            Console.WriteLine("Теперь осталось только вычислить смещенный порядок, и перевести его в двоичную систему счисления");
+            int shiftedNumberOrder = 127 + numberOrder;
+            Console.WriteLine("Значение смещенного порядка в десятичной системе счисления: 127 + {0} = {1}", numberOrder, shiftedNumberOrder);
+
+            Console.WriteLine("Теперь переведём значение смещенного порядка из десятичной системы счисления в двоичную:");
+
+            string binaryShiftedNumberOrder = RightFromDecToBinary(shiftedNumberOrder);
+            Console.WriteLine();
+            Console.WriteLine("Теперь осталось только составить представление числа {0} в формате нормализованной записи", doubleNumber1);
+            Console.WriteLine();
+            string Result = "";
+            if (doubleNumber1 < 0)
+            {
+                Console.WriteLine("Т.к. наше число отрицательное, то первой цифрой в числе будет 1");
+                Console.WriteLine("После 1 пишем значение смещенного порядка в двоичной системе счисления: {0}", binaryShiftedNumberOrder.TrimStart('-'));
+                Console.WriteLine("Ну и после этого пишем мантису: {0}", mantissa.PadRight(23,'0'));
+                Console.WriteLine("(в случае если значение мантисы по длине меньше 23, то добавляем справа 0, пока длина не станет равной 23)");
+                Result = "1" + binaryShiftedNumberOrder.TrimStart('-') + mantissa.PadRight(23, '0');
+            }
+            else
+            {
+                Console.WriteLine("Т.к. наше число положительное, то первой цифрой в числе будет 0");
+                Console.WriteLine("После 0 пишем значение смещенного порядка в двоичной системе счисления: {0}", binaryShiftedNumberOrder.TrimStart('-'));
+                Console.WriteLine("Ну и после этого пишем мантису: {0}", mantissa.PadRight(23, '0'));
+                Console.WriteLine("(в случае если значение мантисы по длине меньше 23, то добавляем справа 0, пока длина не станет равной 23)");
+                Result = "0" + binaryShiftedNumberOrder.TrimStart('-') + mantissa.PadRight(23, '0');
+            }
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Представление числа {0} в формате нормализованной записи имеет вид {1}", doubleNumber1, Result);
+            Console.ResetColor();
+            Console.WriteLine();
+            
+            return Result;
+        }
+
+        private static string FloatPartNumberToBinary(double doubleNumber1, ref string stringFloatPartNumber, int lenOfbinaryIntegerPartNumber)
+        {
+            Console.WriteLine("Чтобы перевести число 0,{0} из десятичной системы счисления в двоичную будем умножать число на 2 и", stringFloatPartNumber);
+            Console.WriteLine("записывать получившуюся целую часть(Синие цифры), пока число 0,{0} не станет целым", stringFloatPartNumber);
+            Console.WriteLine("Если представление числа 0,{0} в двоичной системе имеет бесконечный вид,", stringFloatPartNumber);
+            Console.WriteLine("то мы запишем только первые {0} цифр(ы) этого представления(Чтобы не вылезти за переделы мантиссы)", 23 - lenOfbinaryIntegerPartNumber);
+            Console.WriteLine();
+            int lenOfFloatPartNumber = stringFloatPartNumber.Length;
+            int floatPartNumber = int.Parse(stringFloatPartNumber);
+            StringBuilder resultBinaryFloatPartNumber = new StringBuilder();
+            for (int i = 0; i < 23; i++)
+            {
+                Console.WriteLine("0|{0}", floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber, '0'));
+                Console.WriteLine("*");
+                Console.WriteLine(" |" + "2".PadLeft(lenOfFloatPartNumber, ' '));
+                Console.WriteLine("".PadRight(lenOfFloatPartNumber + 2, '-'));
+                floatPartNumber = floatPartNumber * 2;
+                string floatStringPartNumber = floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber + 1, '0');
+
+                string stringPartBeforeI = floatStringPartNumber.Substring(0, 1);
+                string stringPartAfterI = floatStringPartNumber.Substring(1);
+                resultBinaryFloatPartNumber.Append(stringPartBeforeI);
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write(stringPartBeforeI);
+                Console.ResetColor();
+                Console.WriteLine("|" + stringPartAfterI);
+                floatPartNumber = int.Parse(stringPartAfterI);
+                Console.WriteLine();
+                if (stringPartAfterI == "".PadLeft(lenOfFloatPartNumber, '0'))
+                {
+                    break;
+                }
+            }
+
+            string resultStringBinaryFloatPartNumber = resultBinaryFloatPartNumber.ToString();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Дробная часть числа {0} в двоичной системе имеет вид: 0,{1}", doubleNumber1, resultStringBinaryFloatPartNumber);
+            Console.ResetColor();
+            return resultStringBinaryFloatPartNumber;
+        }
+
+        private static string IntegerPartNumberToBinary(double doubleNumber1, int intIntegerPartNumber)
+        {
+            bool ifLessThanZero = false;
             if (intIntegerPartNumber < 0)
             {
                 Console.WriteLine();
                 Console.WriteLine("Т.к. число {0} отрицательное, то переведем в двочиную систему модуль этого числа и допишем слева \"-\"", intIntegerPartNumber);
-                
+
                 ifLessThanZero = true;
             }
 
             intIntegerPartNumber = Math.Abs(intIntegerPartNumber);
 
-            string stringIntegerPartNumber = RightFromDecToBinary(intIntegerPartNumber);
+            string binaryIntegerPartNumber = RightFromDecToBinary(intIntegerPartNumber);
 
             if (ifLessThanZero)
             {
                 Console.WriteLine();
                 Console.WriteLine("Т.к. число -{0} отрицательное допишем слева \"-\"", intIntegerPartNumber);
-                stringIntegerPartNumber = "-" + stringIntegerPartNumber;
+                binaryIntegerPartNumber = "-" + binaryIntegerPartNumber;
             }
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("Целая часть числа {0} в двоичной системе имеет вид: {1}", doubleNumber1, stringIntegerPartNumber);
+            Console.WriteLine("Целая часть числа {0} в двоичной системе имеет вид: {1}", doubleNumber1, binaryIntegerPartNumber);
             Console.ResetColor();
+            return binaryIntegerPartNumber;
         }
+
         private static void AdditionalSumStart()
         {
             Console.WriteLine("Введите через пробел два целых числа, которые вы хотите сложить");
