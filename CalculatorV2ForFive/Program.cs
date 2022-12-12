@@ -16,7 +16,7 @@ namespace CalculatorV2ForFive
                 Console.WriteLine("Примечание: Данная программа не поддерживает операции с числами большими по модулю 2 147 483 647");
 
                 Console.WriteLine();
-                Console.WriteLine("Нажмите 1 чтобы перевести целое число по модулю меньшее 256 в дополнительный код");
+                Console.WriteLine("Нажмите 1 чтобы перевести целое число по модулю от -128 до 127 в дополнительный код");
                 Console.WriteLine("Нажмите 2 чтобы сложить целые числа(положительные и отрицательные) с использованием дополнительного кода");
                 Console.WriteLine("Нажмите 3 чтобы перевести любое вещественное число в формат нормализованной записи");
                 Console.WriteLine("Нажмите 4 чтобы проссумировать два вещественных числа в формате нормализованной записи");
@@ -101,6 +101,37 @@ namespace CalculatorV2ForFive
                 number2 = number2;
             else
                 throw new ArgumentException("Ваше второе число некоректно");
+            
+            Console.WriteLine();
+            Console.WriteLine("Для начала определим знак итогового ответа");
+            
+            double number1Abs = Math.Abs(number1);
+            double number2Abs = Math.Abs(number2);
+            double maxNumberAbs = Math.Max(number1Abs, number2Abs);
+
+            int resultSign;
+
+            if (maxNumberAbs == number1Abs)
+            {
+                Console.WriteLine("Т.к. число {0} по модулю больше числа {1}, то знак итогового числа совпадает со знаком числа {0}", number1, number2);
+                resultSign = Math.Sign(number1);
+            }
+            else
+            {
+                Console.WriteLine("Т.к. число {0} по модулю больше числа {1}, то знак итогового числа совпадает со знаком числа {0}", number2, number1);
+                resultSign = Math.Sign(number2);
+            }
+
+            if (resultSign==-1)
+            {
+                resultSign = 1;
+            }
+            else
+            {
+                resultSign = 0;
+            }
+
+            Console.WriteLine("Следовательно, знак результата сложения в формате нормализованной записи: {0}", resultSign);
 
             Console.WriteLine();
             Console.WriteLine("Перед тем как производить сложение, нужно перевести оба числа в формат нормализованной записи:");
@@ -108,11 +139,100 @@ namespace CalculatorV2ForFive
             string binaryFloatNumber1 = ConverterFromFloatToBinaryFloat(number1);
             string binaryFloatNumber2 = ConverterFromFloatToBinaryFloat(number2);
 
-            Console.WriteLine();
             Console.WriteLine("Теперь производим суммирование двух чисел в формате нормализованной записи:");
             Console.WriteLine();
 
+            Console.WriteLine("Первым делом нам нужно добиться равенства смещенного порядка у двух чисел:");
+            Console.WriteLine();
+
+            string numberSign1 = binaryFloatNumber1.Substring(0, 1);
+            string numberOrder1 = binaryFloatNumber1.Substring(2, 8);
+            string mantissa1 = binaryFloatNumber1.Substring(11);
+
+            string numberSign2 = binaryFloatNumber2.Substring(0, 1);
+            string numberOrder2 = binaryFloatNumber2.Substring(2, 8);
+            string mantissa2 = binaryFloatNumber2.Substring(11);
+            
+            if (FromAnyToDec(numberOrder1, 2) == FromAnyToDec(numberOrder2, 2))
+            {
+                Console.WriteLine("Т.к. у чисел порядки равны, то делать ничего не нужно");
+            }
+            
+            else if (FromAnyToDec(numberOrder1,2)> FromAnyToDec(numberOrder2, 2))
+            {
+                Alignment(binaryFloatNumber1, ref binaryFloatNumber2, numberOrder1, numberSign2, ref numberOrder2, ref mantissa2);
+            }
+            else 
+            {
+                Alignment(binaryFloatNumber2, ref binaryFloatNumber1, numberOrder2, numberSign1, ref numberOrder1, ref mantissa1);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Числа после выравнивания порядка:");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Первое число: {0}", binaryFloatNumber1);
+            Console.WriteLine("Второе число: {0}", binaryFloatNumber2);
+            Console.ResetColor();
+
+            Console.WriteLine();
+            Console.WriteLine("Теперь осталось только сложить мантиссы и подставить полученный в самом начале знак итогового числа:");
+            string resultOrder = numberOrder2;
+            string resultMantissa = CorrectSum(mantissa1,mantissa2);
+
+            if (resultMantissa.Length > 23)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Т.к. итоговое значение мантиссы имеет длину больше 23, то нам нужно");
+                Console.WriteLine("Увеличить значение смещённого порядка на 1, \"отрезать\" от мантиссы первый элемент и сдвинуть её вправо");
+                resultOrder = Sum(resultOrder, "1");
+                resultMantissa = resultMantissa.Substring(1);
+                resultMantissa = "0" + resultMantissa;
+                resultMantissa = resultMantissa.Substring(0,23);
+            }
+
+            Console.WriteLine();
+            
+            string resultBinary=resultSign+"|"+ resultOrder + "|"+ resultMantissa;
+
+            float resultDec = (float)number1 + (float)number2;
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Итоговый ответ в формате нормализованной записи: {0}", resultBinary);
+            Console.WriteLine("Итоговый ответ в десятичной системе счисления: {0}",resultDec);
+            Console.ResetColor();
+
         }
+
+        private static void Alignment(string binaryFloatNumber1, ref string binaryFloatNumber2, string numberOrder1, string numberSign2, ref string numberOrder2, ref string mantissa2)
+        {
+            Console.WriteLine("Т.к. у числа {0} порядок больше,\n" +
+                                "то нам нужно увеличивать порядок числа {1}", binaryFloatNumber1, binaryFloatNumber2);
+            Console.WriteLine();
+            Console.WriteLine("Для этого будем сдвигать мантиссу вправо и увеличивать значение смещенного порядка на 1, пока порядки не сравняются: ");
+            Console.WriteLine("(Примечание: после первого сдвига мантиссы, она будет начинаться не с 0, а с 1, т.к. эта 1 осталась между \n" +
+                "смещенным порядком и мантиссой после представления числа в нормализованной экспоненциальной форме,\n" +
+                "просто мы её не записывали для экономии памяти)");
+            Console.WriteLine();
+            bool flag = true;
+            while (numberOrder2 != numberOrder1)
+            {
+                numberOrder2 = Sum(numberOrder2, "1");
+                if (flag)
+                {
+                    mantissa2 = "1" + mantissa2;
+                    flag = false;
+                }
+                else
+                {
+                    mantissa2 = "0" + mantissa2;
+                }
+
+                mantissa2 = mantissa2.Substring(0, 23);
+                Console.WriteLine(numberSign2 + "|" + numberOrder2 + "|" + mantissa2);
+            }
+
+            binaryFloatNumber2 = numberSign2 + "|" + numberOrder2 + "|" + mantissa2;
+        }
+
         private static string ConverterFromFloatToBinaryFloatStart()
         {
             Console.WriteLine("Введите вещественное число, которое вы хотите перевести в формат нормализованной записи");
@@ -135,13 +255,22 @@ namespace CalculatorV2ForFive
             string[] parts = str.Split(',');
 
             int intIntegerPartNumber = int.Parse(parts[0]);
-            string floatPartNumber = parts[1];
+            string floatPartNumber;
+            if (parts.Length == 1)
+            {
+                floatPartNumber = "0";
+            }
+            else
+            {
+                floatPartNumber = parts[1];
+            }
 
+            string stringDoubleNumber1 = intIntegerPartNumber.ToString() + "," + floatPartNumber;
             Console.WriteLine();
-            Console.WriteLine("Переведём вещественное число {0} в двоичную систему счисления", doubleNumber1);
+            Console.WriteLine("Переведём вещественное число {0} в двоичную систему счисления", stringDoubleNumber1);
             Console.WriteLine("Сначала переведём целую часть числа в двоичную систему счисления: ");
 
-            string binaryIntegerPartNumber = IntegerPartNumberToBinary(doubleNumber1, intIntegerPartNumber);
+            string binaryIntegerPartNumber = IntegerPartNumberToBinary(stringDoubleNumber1, intIntegerPartNumber);
             int lenOfbinaryIntegerPartNumber;
             if (doubleNumber1 < 0 && intIntegerPartNumber == 0)
             {
@@ -158,11 +287,11 @@ namespace CalculatorV2ForFive
             Console.WriteLine();
             Console.WriteLine("Теперь переведём дробную часть числа в двоичную систему счисления: ");
             Console.WriteLine();
-            string resultStringBinaryFloatPartNumber = FloatPartNumberToBinary(doubleNumber1, ref floatPartNumber, lenOfbinaryIntegerPartNumber);
+            string resultStringBinaryFloatPartNumber = FloatPartNumberToBinary(stringDoubleNumber1, ref floatPartNumber, lenOfbinaryIntegerPartNumber);
 
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Итого, число {0} в двоичной системе имеет вид: {1},{2}", doubleNumber1, binaryIntegerPartNumber, resultStringBinaryFloatPartNumber);
+            Console.WriteLine("Итого, число {0} в двоичной системе имеет вид: {1},{2}", stringDoubleNumber1, binaryIntegerPartNumber, resultStringBinaryFloatPartNumber);
             Console.ResetColor();
             string resultBinaryNumber = binaryIntegerPartNumber + resultStringBinaryFloatPartNumber;
             Console.WriteLine();
@@ -210,7 +339,7 @@ namespace CalculatorV2ForFive
 
             string binaryShiftedNumberOrder = RightFromDecToBinary(shiftedNumberOrder);
             Console.WriteLine();
-            Console.WriteLine("Теперь осталось только составить представление числа {0} в формате нормализованной записи", doubleNumber1);
+            Console.WriteLine("Теперь осталось только составить представление числа {0} в формате нормализованной записи", stringDoubleNumber1);
             Console.WriteLine();
             string Result = "";
             if (doubleNumber1 < 0)
@@ -219,7 +348,8 @@ namespace CalculatorV2ForFive
                 Console.WriteLine("После 1 пишем значение смещенного порядка в двоичной системе счисления: {0}", binaryShiftedNumberOrder.TrimStart('-'));
                 Console.WriteLine("Ну и после этого пишем мантису: {0}", mantissa.PadRight(23, '0'));
                 Console.WriteLine("(в случае если значение мантисы по длине меньше 23, то добавляем справа 0, пока длина не станет равной 23)");
-                Result = "1" + binaryShiftedNumberOrder.TrimStart('-') + mantissa.PadRight(23, '0');
+                
+                Result = "1" + "|" + binaryShiftedNumberOrder.TrimStart('-').PadLeft(8, '0') + "|" + mantissa.PadRight(23, '0');
             }
             else
             {
@@ -227,18 +357,18 @@ namespace CalculatorV2ForFive
                 Console.WriteLine("После 0 пишем значение смещенного порядка в двоичной системе счисления: {0}", binaryShiftedNumberOrder.TrimStart('-'));
                 Console.WriteLine("Ну и после этого пишем мантису: {0}", mantissa.PadRight(23, '0'));
                 Console.WriteLine("(в случае если значение мантисы по длине меньше 23, то добавляем справа 0, пока длина не станет равной 23)");
-                Result = "0" + binaryShiftedNumberOrder.TrimStart('-') + mantissa.PadRight(23, '0');
+                Result = "0" + "|" + binaryShiftedNumberOrder.TrimStart('-').PadLeft(8, '0') + "|" + mantissa.PadRight(23, '0');
             }
 
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("Представление числа {0} в формате нормализованной записи имеет вид {1}", doubleNumber1, Result);
+            Console.WriteLine("Представление числа {0} в формате нормализованной записи имеет вид {1}", stringDoubleNumber1, Result);
             Console.ResetColor();
             Console.WriteLine();
             return Result;
         }
 
-        private static string FloatPartNumberToBinary(double doubleNumber1, ref string stringFloatPartNumber, int lenOfbinaryIntegerPartNumber)
+        private static string FloatPartNumberToBinary(string stringDoubleNumber1, ref string stringFloatPartNumber, int lenOfbinaryIntegerPartNumber)
         {
             Console.WriteLine("Чтобы перевести число 0,{0} из десятичной системы счисления в двоичную будем умножать число на 2 и", stringFloatPartNumber);
             Console.WriteLine("записывать получившуюся целую часть(Синие цифры), пока число 0,{0} не станет целым", stringFloatPartNumber);
@@ -248,7 +378,7 @@ namespace CalculatorV2ForFive
             int lenOfFloatPartNumber = stringFloatPartNumber.Length;
             int floatPartNumber = int.Parse(stringFloatPartNumber);
             StringBuilder resultBinaryFloatPartNumber = new StringBuilder();
-            for (int i = 0; i < 23; i++)
+            for (int i = 0; i < 23 - lenOfbinaryIntegerPartNumber + 1; i++)
             {
                 Console.WriteLine("0|{0}", floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber, '0'));
                 Console.WriteLine("*");
@@ -276,12 +406,12 @@ namespace CalculatorV2ForFive
             string resultStringBinaryFloatPartNumber = resultBinaryFloatPartNumber.ToString();
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("Дробная часть числа {0} в двоичной системе имеет вид: 0,{1}", doubleNumber1, resultStringBinaryFloatPartNumber);
+            Console.WriteLine("Дробная часть числа {0} в двоичной системе имеет вид: 0,{1}", stringDoubleNumber1, resultStringBinaryFloatPartNumber);
             Console.ResetColor();
             return resultStringBinaryFloatPartNumber;
         }
 
-        private static string IntegerPartNumberToBinary(double doubleNumber1, int intIntegerPartNumber)
+        private static string IntegerPartNumberToBinary(string stringDoubleNumber1, int intIntegerPartNumber)
         {
             bool ifLessThanZero = false;
             if (intIntegerPartNumber < 0)
@@ -304,7 +434,7 @@ namespace CalculatorV2ForFive
             }
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("Целая часть числа {0} в двоичной системе имеет вид: {1}", doubleNumber1, binaryIntegerPartNumber);
+            Console.WriteLine("Целая часть числа {0} в двоичной системе имеет вид: {1}", stringDoubleNumber1, binaryIntegerPartNumber);
             Console.ResetColor();
             return binaryIntegerPartNumber;
         }
@@ -313,7 +443,7 @@ namespace CalculatorV2ForFive
         {
             Console.WriteLine("Введите через пробел два целых числа, которые вы хотите сложить");
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("(Внимание, в случае если сумма чисел по модулю больше 127 калькулятор будет выводить неверные ответы)");
+            Console.WriteLine("(Внимание, в случае если сумма чисел меньше -128 или больше 127 калькулятор будет выводить неверные ответы)");
             Console.ResetColor();
             string sumReadLine = Console.ReadLine().Trim();
             string[] sumSplit = sumReadLine.Split(" ");
@@ -545,11 +675,15 @@ namespace CalculatorV2ForFive
             int startNumber1 = number1;
             string binNumber;
             Console.WriteLine();
-            if (Math.Abs(number1) >= 256)
+            if (number1< -128)
             {
-                throw new ArgumentException("Ваше число по модулю больше либо равно 256");
+                throw new ArgumentException("Ваше число меньше -128");
             }
 
+            if (number1 > 127)
+            {
+                throw new ArgumentException("Ваше число больше 127");
+            }
             if (number1 >= 0)
             {
                 Console.WriteLine("Т.к. число {0} - не отрицательное, то, чтобы найти его представление в дополнительном коде нам нужно:", number1);
@@ -832,6 +966,80 @@ namespace CalculatorV2ForFive
             Console.ResetColor();
             
             return result;
-        }   
+        }
+
+        public static string Sum(string number1, string number2)
+        {
+
+            StringBuilder sum = new StringBuilder();
+
+            string num1 = number1;
+            string num2 = number2;
+
+            int base1 = 2;
+
+            int NumD1 = FromAnyToDec(num1, 2);
+            int NumD2 = FromAnyToDec(num2, 2);
+            int len = 0;
+            string maxNum = "";
+            string minNum = "";
+
+            if (NumD1 > NumD2)
+            {
+                len = num1.Length;
+                maxNum = num1;
+                minNum = num2;
+            }
+            else
+            {
+                len = num2.Length;
+                maxNum = num2;
+                minNum = num1;
+            }
+
+            maxNum = new string(maxNum.Reverse().ToArray());
+            minNum = new string(minNum.Reverse().ToArray());
+
+           
+            int des = 0;
+            for (int i = 0; i < len; i++)
+            {
+                int res = 0;
+                int digit1 = maxNum[i] - '0';
+                int digit2 = 0;
+                if (i < minNum.Length)
+                    digit2 = minNum[i] - '0';
+
+                res = des + digit1 + digit2;
+
+                if (res >= base1)
+                {
+
+                    sum.Append(res - base1);
+                    if (i == len - 1)
+                    {
+                        sum.Append("1");
+
+                    }
+                    else
+                    {
+                        des = 1;
+                    }
+                }
+                else
+                {
+                    des = 0;
+                    sum.Append(res);
+                }
+            }
+
+            maxNum = new string(maxNum.Reverse().ToArray());
+            minNum = new string(minNum.Reverse().ToArray());
+            string res1 = sum.ToString();
+            res1 = new string(res1.Reverse().ToArray());
+            int lenRes = res1.Length;
+
+            return res1.ToString();
+        }
     }
 }
