@@ -75,7 +75,7 @@ namespace CalculatorV2ForFive
         private static void SumFloatBinaryStart()
         {
             Console.WriteLine("Введите через пробел два вещественных числа, которые вы хотите сложить");
-
+            Console.WriteLine("(Целая часть отделяется от дробной \",\")");
             //Console.ForegroundColor = ConsoleColor.DarkRed;
             //Console.WriteLine("(Внимание, в случае если сумма чисел по модулю больше 127 калькулятор будет выводить неверные ответы)");
             //Console.ResetColor();
@@ -373,11 +373,12 @@ namespace CalculatorV2ForFive
             Console.WriteLine("Чтобы перевести число 0,{0} из десятичной системы счисления в двоичную будем умножать число на 2 и", stringFloatPartNumber);
             Console.WriteLine("записывать получившуюся целую часть(Синие цифры), пока число 0,{0} не станет целым", stringFloatPartNumber);
             Console.WriteLine("Если представление числа 0,{0} в двоичной системе имеет бесконечный вид,", stringFloatPartNumber);
-            Console.WriteLine("то мы запишем только первые {0} цифр(ы) этого представления(Чтобы не вылезти за переделы мантиссы)", 23 - lenOfbinaryIntegerPartNumber+1);
+            Console.WriteLine("то мы запишем столько цифр этого представления сколько влезет в мантиссу");
             Console.WriteLine();
             int lenOfFloatPartNumber = stringFloatPartNumber.Length;
             int floatPartNumber = int.Parse(stringFloatPartNumber);
             StringBuilder resultBinaryFloatPartNumber = new StringBuilder();
+            bool flag = true;
             for (int i = 0; i < 23 - lenOfbinaryIntegerPartNumber + 1; i++)
             {
                 Console.WriteLine("0|{0}", floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber, '0'));
@@ -387,12 +388,24 @@ namespace CalculatorV2ForFive
                 floatPartNumber = floatPartNumber * 2;
                 string floatStringPartNumber = floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber + 1, '0');
 
+               
                 string stringPartBeforeI = floatStringPartNumber.Substring(0, 1);
                 string stringPartAfterI = floatStringPartNumber.Substring(1);
                 resultBinaryFloatPartNumber.Append(stringPartBeforeI);
+                if (stringPartBeforeI == "0" && flag)
+                {
+                    lenOfbinaryIntegerPartNumber -= 1;
+                }
+                if (stringPartBeforeI == "1" && flag)
+                {
+                    lenOfbinaryIntegerPartNumber -= 1;
+                    flag = false;
+                }
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.Write(stringPartBeforeI);
                 Console.ResetColor();
+                
+
                 Console.WriteLine("|" + stringPartAfterI);
                 floatPartNumber = int.Parse(stringPartAfterI);
                 Console.WriteLine();
