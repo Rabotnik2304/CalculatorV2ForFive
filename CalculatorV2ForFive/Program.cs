@@ -131,6 +131,11 @@ namespace CalculatorV2ForFive
                 resultSign = 0;
             }
 
+            string StringResultDec;
+            float resultDec = GetFloatSum(number1.ToString(), number2.ToString(),out StringResultDec);
+
+            string resultBinory = FalseConverterFromFloatToBinaryFloat(resultDec, StringResultDec);
+
             Console.WriteLine("Следовательно, знак результата сложения в формате нормализованной записи: {0}", resultSign);
 
             Console.WriteLine();
@@ -193,13 +198,42 @@ namespace CalculatorV2ForFive
 
             string resultBinary = resultSign + "|" + resultOrder + "|" + resultMantissa;
 
-            float resultDec = (float)number1 + (float)number2;
+            
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Итоговый ответ в формате нормализованной записи: {0}", resultBinary);
+            Console.WriteLine("Итоговый ответ в формате нормализованной записи: {0}", resultBinory);
             Console.WriteLine("Итоговый ответ в десятичной системе счисления: {0}", resultDec);
             Console.ResetColor();
 
+        }
+
+        private static float GetFloatSum(string input1, string input2, out string result)
+        {
+            int offset1 = input1.Length - input1.IndexOf(',') - 1;
+            int offset2 = input2.Length - input2.IndexOf(',') - 1;
+            long number1 = long.Parse(input1.Replace(",", ""));
+            long number2 = long.Parse(input2.Replace(",", ""));
+
+            if (offset1 >= offset2)
+                number2 *= (long)Math.Pow(10, offset1 - offset2);
+            else
+                number1 *= (long)Math.Pow(10, offset2 - offset1);
+
+            string sum = (number1 + number2).ToString();
+            int diff = sum.Length - Math.Max(offset1, offset2);
+
+            if (diff < 0)
+                sum = new string('0', -diff) + sum;
+
+            result = sum.Insert(sum.Length - Math.Max(offset1, offset2), ",");
+
+            if (result[0] == ',')
+                result = "0" + result;
+
+            if (result[result.Length - 1] == ',')
+                result = result + "0";
+
+            return float.Parse(result);
         }
 
         private static void Alignment(string binaryFloatNumber1, ref string binaryFloatNumber2, string numberOrder1, string numberSign2, ref string numberOrder2, ref string mantissa2)
@@ -367,7 +401,94 @@ namespace CalculatorV2ForFive
             Console.WriteLine();
             return Result;
         }
+        private static string FalseConverterFromFloatToBinaryFloat(double doubleNumber1,string StringDoubleNumber1)
+        {
+            string str = StringDoubleNumber1;
+            string[] parts = str.Split(',');
 
+            int intIntegerPartNumber = int.Parse(parts[0]);
+            string floatPartNumber;
+            if (parts.Length == 1)
+            {
+                floatPartNumber = "0";
+            }
+            else
+            {
+                floatPartNumber = parts[1];
+            }
+
+            string stringDoubleNumber1 = intIntegerPartNumber.ToString() + "," + floatPartNumber;
+            
+
+            string binaryIntegerPartNumber = FalseIntegerPartNumberToBinary(stringDoubleNumber1, intIntegerPartNumber);
+            int lenOfbinaryIntegerPartNumber;
+            if (doubleNumber1 < 0 && intIntegerPartNumber == 0)
+            {
+                binaryIntegerPartNumber = "-" + binaryIntegerPartNumber;
+            }
+            if (binaryIntegerPartNumber.Substring(0, 1) == "-")
+            {
+                lenOfbinaryIntegerPartNumber = binaryIntegerPartNumber.Length - 1;
+            }
+            else
+            {
+                lenOfbinaryIntegerPartNumber = binaryIntegerPartNumber.Length;
+            }
+            
+            string resultStringBinaryFloatPartNumber = FalseFloatPartNumberToBinary(stringDoubleNumber1, ref floatPartNumber, lenOfbinaryIntegerPartNumber);
+
+            
+            string resultBinaryNumber = binaryIntegerPartNumber + resultStringBinaryFloatPartNumber;
+            
+
+            string numberSign = "";
+            string mantissa = "";
+            int numberOrder = 0;
+
+            if (intIntegerPartNumber != 0)
+            {
+                numberSign = resultBinaryNumber.Substring(0, 1 + binaryIntegerPartNumber.Length - lenOfbinaryIntegerPartNumber);
+                mantissa = resultBinaryNumber.Substring(1 + binaryIntegerPartNumber.Length - lenOfbinaryIntegerPartNumber);
+                numberOrder = lenOfbinaryIntegerPartNumber - 1;
+            }
+            else
+            {
+
+                numberSign = resultStringBinaryFloatPartNumber.TrimStart('0').Substring(0, 1);
+                if (doubleNumber1 < 0)
+                {
+                    numberSign = "-" + numberSign;
+                }
+                mantissa = resultStringBinaryFloatPartNumber.TrimStart('0').Substring(1);
+
+                numberOrder = -(resultStringBinaryFloatPartNumber.Length - mantissa.Length);
+
+                if (mantissa.Length == 0)
+                {
+                    mantissa = "0";
+                }
+            }
+            
+            int shiftedNumberOrder = 127 + numberOrder;
+            
+
+            string binaryShiftedNumberOrder = FalseRightFromDecToBinary(shiftedNumberOrder);
+            
+            string Result = "";
+            if (doubleNumber1 < 0)
+            {
+                
+
+                Result = "1" + "|" + binaryShiftedNumberOrder.TrimStart('-').PadLeft(8, '0') + "|" + mantissa.PadRight(23, '0');
+            }
+            else
+            {
+                
+                Result = "0" + "|" + binaryShiftedNumberOrder.TrimStart('-').PadLeft(8, '0') + "|" + mantissa.PadRight(23, '0');
+            }
+
+            return Result;
+        }
         private static string FloatPartNumberToBinary(string stringDoubleNumber1, ref string stringFloatPartNumber, int lenOfbinaryIntegerPartNumber)
         {
             Console.WriteLine("Чтобы перевести число 0,{0} из десятичной системы счисления в двоичную будем умножать число на 2 и", stringFloatPartNumber);
@@ -424,6 +545,45 @@ namespace CalculatorV2ForFive
             return resultStringBinaryFloatPartNumber;
         }
 
+        private static string FalseFloatPartNumberToBinary(string stringDoubleNumber1, ref string stringFloatPartNumber, int lenOfbinaryIntegerPartNumber)
+        {
+            
+            int lenOfFloatPartNumber = stringFloatPartNumber.Length;
+            int floatPartNumber = int.Parse(stringFloatPartNumber);
+            StringBuilder resultBinaryFloatPartNumber = new StringBuilder();
+            bool flag = true;
+            for (int i = 0; i < 23 - lenOfbinaryIntegerPartNumber + 1; i++)
+            {
+                
+                floatPartNumber = floatPartNumber * 2;
+                string floatStringPartNumber = floatPartNumber.ToString().PadLeft(lenOfFloatPartNumber + 1, '0');
+
+
+                string stringPartBeforeI = floatStringPartNumber.Substring(0, 1);
+                string stringPartAfterI = floatStringPartNumber.Substring(1);
+                resultBinaryFloatPartNumber.Append(stringPartBeforeI);
+                if (stringPartBeforeI == "0" && flag)
+                {
+                    lenOfbinaryIntegerPartNumber -= 1;
+                }
+                if (stringPartBeforeI == "1" && flag)
+                {
+                    lenOfbinaryIntegerPartNumber -= 1;
+                    flag = false;
+                }
+
+                floatPartNumber = int.Parse(stringPartAfterI);
+          
+                if (stringPartAfterI == "".PadLeft(lenOfFloatPartNumber, '0'))
+                {
+                    break;
+                }
+            }
+
+            string resultStringBinaryFloatPartNumber = resultBinaryFloatPartNumber.ToString();
+            
+            return resultStringBinaryFloatPartNumber;
+        }
         private static string IntegerPartNumberToBinary(string stringDoubleNumber1, int intIntegerPartNumber)
         {
             bool ifLessThanZero = false;
@@ -451,7 +611,26 @@ namespace CalculatorV2ForFive
             Console.ResetColor();
             return binaryIntegerPartNumber;
         }
+        private static string FalseIntegerPartNumberToBinary(string stringDoubleNumber1, int intIntegerPartNumber)
+        {
+            bool ifLessThanZero = false;
+            if (intIntegerPartNumber < 0)
+            {
+                ifLessThanZero = true;
+            }
 
+            intIntegerPartNumber = Math.Abs(intIntegerPartNumber);
+
+            string binaryIntegerPartNumber = FalseRightFromDecToBinary(intIntegerPartNumber);
+
+            if (ifLessThanZero)
+            {
+                
+                binaryIntegerPartNumber = "-" + binaryIntegerPartNumber;
+            }
+           
+            return binaryIntegerPartNumber;
+        }
         private static void AdditionalSumStart()
         {
             Console.WriteLine("Введите через пробел два целых числа, которые вы хотите сложить");
@@ -980,7 +1159,32 @@ namespace CalculatorV2ForFive
 
             return result;
         }
+        static string FalseRightFromDecToBinary(int number)
+        {
+            int baze = 2;
+            int numberStart = number;
+            StringBuilder builder = new StringBuilder();
 
+            do
+            {
+                int mod = number % baze;
+                char c = (char)('0' + mod);
+                
+                builder.Append(c);
+                number /= baze;
+            } while (number >= baze);
+
+            
+            if (number != 0)
+            {
+
+                builder.Append((char)('0' + number));
+            }
+            
+            string result = string.Join("", builder.ToString().Reverse());
+
+            return result;
+        }
         public static string Sum(string number1, string number2)
         {
 
